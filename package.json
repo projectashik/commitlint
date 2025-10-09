@@ -15,12 +15,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/projectashik/cbashik-commitlint.git"
+    "url": "https://github.com/projectashik/commitlint.git"
   },
   "bugs": {
-    "url": "https://github.com/projectashik/cbashik-commitlint/issues"
+    "url": "https://github.com/projectashik/commitlint/issues"
   },
-  "homepage": "https://github.com/projectashik/cbashik-commitlint#readme",
+  "homepage": "https://github.com/projectashik/commitlint#readme",
   "files": [
     "index.js",
     "README.md"

@@ -67,5 +67,5 @@ module.exports = {
 
   // Help URL for developers
   helpUrl:
-    "https://github.com/projectashik/cbashik-commitlint#commit-message-format",
+    "https://github.com/projectashik/commitlint#commit-message-format",
 };
