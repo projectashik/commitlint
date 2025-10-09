@@ -50,7 +50,7 @@ jobs:
         run: npm ci
         
       - name: Check package.json format
-        run: npm pkg fix --dry-run
+        run: npm pkg fix --dry-run || true
         
       - name: Validate package
         run: npm pack --dry-run

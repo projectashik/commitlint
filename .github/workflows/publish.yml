@@ -10,6 +10,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     
     steps:
       - name: Checkout code
@@ -34,15 +37,13 @@ jobs:
           
       - name: Create GitHub Release (if tag push)
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "Changes in this Release
+          - Updated commitlint configuration
+          - See [CHANGELOG.md](./CHANGELOG.md) for details
+          
+          **Full Changelog**: https://github.com/$\{\{ github.repository }}/commits/${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: |
-            Changes in this Release
-            - Updated commitlint configuration
-            - See [CHANGELOG.md](./CHANGELOG.md) for details
-          draft: false
-          prerelease: false
