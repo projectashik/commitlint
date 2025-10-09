@@ -1,0 +1,43 @@
+{
+  "name": "@cbashik/commitlint",
+  "version": "1.0.0",
+  "description": "Custom commitlint configuration for cbashik projects",
+  "main": "index.js",
+  "keywords": [
+    "commitlint",
+    "conventional-commits",
+    "git",
+    "commit",
+    "linting",
+    "cbashik"
+  ],
+  "author": "cbashik",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/projectashik/cbashik-commitlint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/projectashik/cbashik-commitlint/issues"
+  },
+  "homepage": "https://github.com/projectashik/cbashik-commitlint#readme",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@commitlint/cli": ">=17.0.0",
+    "@commitlint/config-conventional": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0"
+  },
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "prepublishOnly": "npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
