@@ -1,6 +1,6 @@
 {
   "name": "@cbashik/commitlint",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Custom commitlint configuration for cbashik projects",
   "main": "index.js",
   "keywords": [
