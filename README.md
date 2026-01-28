@@ -33,6 +33,8 @@ npm), installs `@cbashik/commitlint` and `@commitlint/cli` (and Husky if needed)
 adds commitlint config to your `package.json` when missing, initializes Husky,
 and writes a `commit-msg` hook using the matching executor. Add `--ask` to be
 prompted for each option with the detected/default choice preselected.
+When run inside a Turborepo workspace, init installs and sets up Husky at the
+workspace root (pnpm uses `-w`).
 
 ## Usage
 

@@ -31,7 +31,16 @@ async function main() {
   }
 
   const cwd = process.cwd();
-  const packageJsonPath = path.join(cwd, "package.json");
+  const turboRoot = findTurboRoot(cwd);
+  let workspaceRoot = turboRoot || cwd;
+  let usingWorkspaceRoot = turboRoot && turboRoot !== cwd;
+  let packageJsonPath = path.join(workspaceRoot, "package.json");
+
+  if (usingWorkspaceRoot && !fileExists(packageJsonPath)) {
+    workspaceRoot = cwd;
+    usingWorkspaceRoot = false;
+    packageJsonPath = path.join(workspaceRoot, "package.json");
+  }
 
   if (!fileExists(packageJsonPath)) {
     console.error("No package.json found in the current directory.");
@@ -39,7 +48,7 @@ async function main() {
   }
 
   const packageJson = readJson(packageJsonPath);
-  const detectedPackageManager = detectPackageManager(cwd);
+  const detectedPackageManager = detectPackageManager(workspaceRoot);
   const prompter = askMode ? createPrompter() : null;
 
   let packageManager = detectedPackageManager;
@@ -50,8 +59,8 @@ async function main() {
   addIfMissing(packageJson, packagesToInstall, "@cbashik/commitlint");
   addIfMissing(packageJson, packagesToInstall, "@commitlint/cli");
 
-  const hasGit = fileExists(path.join(cwd, ".git"));
-  const huskyShim = path.join(cwd, ".husky", "_", "husky.sh");
+  const hasGit = fileExists(path.join(workspaceRoot, ".git"));
+  const huskyShim = path.join(workspaceRoot, ".husky", "_", "husky.sh");
   const needsHuskyInit = hasGit && !fileExists(huskyShim);
 
   try {
@@ -83,10 +92,13 @@ async function main() {
 
     const pmConfig = getPackageManagerConfig(packageManager);
 
+    if (usingWorkspaceRoot) {
+      console.log(`Using workspace root: ${workspaceRoot}`);
+    }
     console.log(`Using package manager: ${packageManager}`);
 
     if (shouldAddConfig) {
-      ensureCommitlintConfig(cwd, packageJsonPath, packageJson);
+      ensureCommitlintConfig(workspaceRoot, packageJsonPath, packageJson);
     } else {
       console.log("Skipping commitlint config setup.");
     }
@@ -106,8 +118,19 @@ async function main() {
         console.log(
           `Installing dev dependencies: ${packagesToInstall.join(", ")}`
         );
-        const installArgs = pmConfig.install.args.concat(packagesToInstall);
-        runCommand(pmConfig.install.command, installArgs);
+        const installArgs = pmConfig.install.args.slice();
+        if (
+          usingWorkspaceRoot &&
+          packageManager === "pnpm" &&
+          !installArgs.includes("-w") &&
+          !installArgs.includes("--workspace-root")
+        ) {
+          installArgs.push("-w");
+        }
+        installArgs.push(...packagesToInstall);
+        runCommand(pmConfig.install.command, installArgs, {
+          cwd: workspaceRoot,
+        });
       } else {
         console.log("Skipping dependency install.");
       }
@@ -137,12 +160,14 @@ async function main() {
 
     if (needsHuskyInit) {
       console.log("Initializing Husky...");
-      runCommand(pmConfig.husky.command, pmConfig.husky.args);
+      runCommand(pmConfig.husky.command, pmConfig.husky.args, {
+        cwd: workspaceRoot,
+      });
     } else {
       console.log("Husky already initialized, skipping install.");
     }
 
-    ensureCommitMsgHook(cwd, pmConfig.hookCommand);
+    ensureCommitMsgHook(workspaceRoot, pmConfig.hookCommand);
   } finally {
     if (prompter) {
       prompter.close();
@@ -196,6 +221,22 @@ function hasDependency(packageJson, name) {
 function addIfMissing(packageJson, list, name) {
   if (!hasDependency(packageJson, name)) {
     list.push(name);
+  }
+}
+
+function findTurboRoot(startDir) {
+  let current = startDir;
+
+  while (true) {
+    if (fileExists(path.join(current, "turbo.json"))) {
+      return current;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
   }
 }
 
@@ -308,8 +349,11 @@ function getPackageManagerConfig(name) {
   return configs[name] || configs.npm;
 }
 
-function runCommand(command, args) {
-  const result = spawnSync(command, args, { stdio: "inherit" });
+function runCommand(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    stdio: "inherit",
+    cwd: options.cwd || process.cwd(),
+  });
   if (result.error) {
     console.error(`Failed to run ${command}: ${result.error.message}`);
     process.exit(1);
