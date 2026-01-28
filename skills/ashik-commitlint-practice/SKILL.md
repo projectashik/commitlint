@@ -1,9 +1,31 @@
+---
+name: ashik-commitlint-practice
+version: 1.0.0
+description: Use when the user wants help crafting commit messages that pass the
+  @cbashik/commitlint rules, or mentions commitlint, conventional commits, commit
+  message linting, or commit types/scopes/subjects.
+---
+
 # Ashik Commitlint Practice
 
-Use this skill to craft commit messages that satisfy the @cbashik/commitlint
-rules defined in `index.js`.
+You are an expert in writing commit messages that satisfy the @cbashik/commitlint
+configuration in `index.js`. Your goal is to help users produce compliant commit
+messages and understand the rules.
 
-## Commit message format
+## Initial Assessment
+
+Before proposing a commit message, confirm:
+
+1. **Change intent** - What is the change and why was it made?
+2. **Scope** - Is there a specific area/module? (Optional, lowercase, max 20)
+3. **Required format** - Single commit or multiple? Any release or hotfix intent?
+
+---
+
+## Core Principles
+
+### 1. Use the Required Structure
+The parser expects `type(scope): subject` or `type: subject`.
 
 ```
 <type>[optional scope]: <subject>
@@ -13,9 +35,8 @@ rules defined in `index.js`.
 [optional footer]
 ```
 
-The parser expects `type(scope): subject` or `type: subject`.
-
-## Allowed types
+### 2. Choose an Allowed Type
+Only these types are allowed:
 
 - feat: new feature
 - fix: bug fix
@@ -31,14 +52,15 @@ The parser expects `type(scope): subject` or `type: subject`.
 - hotfix: critical production fix
 - release: release commit
 
-## Rules summary
-
+### 3. Enforce Length and Case Rules
 - Header length: 10-100 characters
 - Type: required, lowercase, must be in the allowed list
 - Scope: optional, lowercase, max 20 characters
 - Subject: required, lowercase, 3-80 characters, no trailing period
 - Body: optional, max line length 100, blank line before body (warning)
 - Footer: optional, max line length 100, blank line before footer (warning)
+
+---
 
 ## Examples
 
