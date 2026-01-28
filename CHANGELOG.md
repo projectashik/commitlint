@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `--init` CLI to install dependencies, scaffold commitlint config, and set up
   Husky commit-msg hooks.
+- `--ask` flag to prompt for each init option with defaults preselected.
+
+### Changed
+- `--init` now writes commitlint config into `package.json` instead of creating
+  a `commitlint.config.js` file.
 
 ## [1.0.2] - 2024-10-09
 

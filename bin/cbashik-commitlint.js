@@ -3,9 +3,11 @@
 
 const fs = require("fs");
 const path = require("path");
+const readline = require("readline");
 const { spawnSync } = require("child_process");
 
 const args = process.argv.slice(2);
+const askMode = args.includes("--ask");
 
 if (args.includes("--help") || args.includes("-h") || args.length === 0) {
   printUsage();
@@ -17,58 +19,140 @@ if (!args.includes("--init")) {
   process.exit(1);
 }
 
-const cwd = process.cwd();
-const packageJsonPath = path.join(cwd, "package.json");
-
-if (!fileExists(packageJsonPath)) {
-  console.error("No package.json found in the current directory.");
+main().catch((error) => {
+  console.error(error.message);
   process.exit(1);
+});
+
+async function main() {
+  if (askMode && !process.stdin.isTTY) {
+    console.error("The --ask flag requires an interactive terminal.");
+    process.exit(1);
+  }
+
+  const cwd = process.cwd();
+  const packageJsonPath = path.join(cwd, "package.json");
+
+  if (!fileExists(packageJsonPath)) {
+    console.error("No package.json found in the current directory.");
+    process.exit(1);
+  }
+
+  const packageJson = readJson(packageJsonPath);
+  const detectedPackageManager = detectPackageManager(cwd);
+  const prompter = askMode ? createPrompter() : null;
+
+  let packageManager = detectedPackageManager;
+  let wantsHusky = true;
+  let shouldAddConfig = true;
+
+  const packagesToInstall = [];
+  addIfMissing(packageJson, packagesToInstall, "@cbashik/commitlint");
+  addIfMissing(packageJson, packagesToInstall, "@commitlint/cli");
+
+  const hasGit = fileExists(path.join(cwd, ".git"));
+  const huskyShim = path.join(cwd, ".husky", "_", "husky.sh");
+  const needsHuskyInit = hasGit && !fileExists(huskyShim);
+
+  try {
+    if (askMode) {
+      packageManager = await promptPackageManager(
+        prompter,
+        detectedPackageManager
+      );
+      wantsHusky = hasGit
+        ? await promptYesNo(
+            prompter,
+            "Set up Husky and commit-msg hook?",
+            true
+          )
+        : false;
+      shouldAddConfig = await promptYesNo(
+        prompter,
+        "Add commitlint config to package.json?",
+        true
+      );
+    }
+
+    const needsHuskyDependency =
+      wantsHusky && needsHuskyInit && !hasDependency(packageJson, "husky");
+
+    if (needsHuskyDependency) {
+      packagesToInstall.push("husky");
+    }
+
+    const pmConfig = getPackageManagerConfig(packageManager);
+
+    console.log(`Using package manager: ${packageManager}`);
+
+    if (shouldAddConfig) {
+      ensureCommitlintConfig(cwd, packageJsonPath, packageJson);
+    } else {
+      console.log("Skipping commitlint config setup.");
+    }
+
+    let shouldInstall = packagesToInstall.length > 0;
+
+    if (packagesToInstall.length > 0) {
+      if (askMode) {
+        shouldInstall = await promptYesNo(
+          prompter,
+          `Install dev dependencies (${packagesToInstall.join(", ")})?`,
+          true
+        );
+      }
+
+      if (shouldInstall) {
+        console.log(
+          `Installing dev dependencies: ${packagesToInstall.join(", ")}`
+        );
+        const installArgs = pmConfig.install.args.concat(packagesToInstall);
+        runCommand(pmConfig.install.command, installArgs);
+      } else {
+        console.log("Skipping dependency install.");
+      }
+    } else {
+      console.log("Dependencies already present, skipping install.");
+    }
+
+    if (!hasGit) {
+      console.log("No .git directory found; skipping Husky setup.");
+      return;
+    }
+
+    let skipHuskyReason = null;
+
+    if (!wantsHusky) {
+      skipHuskyReason = "Skipping Husky setup by user choice.";
+    } else if (!shouldInstall && needsHuskyDependency) {
+      skipHuskyReason =
+        "Husky is not installed; skipping Husky setup. " +
+        "Install it and rerun init.";
+    }
+
+    if (skipHuskyReason) {
+      console.log(skipHuskyReason);
+      return;
+    }
+
+    if (needsHuskyInit) {
+      console.log("Initializing Husky...");
+      runCommand(pmConfig.husky.command, pmConfig.husky.args);
+    } else {
+      console.log("Husky already initialized, skipping install.");
+    }
+
+    ensureCommitMsgHook(cwd, pmConfig.hookCommand);
+  } finally {
+    if (prompter) {
+      prompter.close();
+    }
+  }
 }
-
-const packageJson = readJson(packageJsonPath);
-const packageManager = detectPackageManager(cwd);
-const pmConfig = getPackageManagerConfig(packageManager);
-
-console.log(`Using package manager: ${packageManager}`);
-
-const packagesToInstall = [];
-addIfMissing(packageJson, packagesToInstall, "@cbashik/commitlint");
-addIfMissing(packageJson, packagesToInstall, "@commitlint/cli");
-
-const hasGit = fileExists(path.join(cwd, ".git"));
-const huskyShim = path.join(cwd, ".husky", "_", "husky.sh");
-const needsHuskyInit = hasGit && !fileExists(huskyShim);
-
-if (needsHuskyInit && !hasDependency(packageJson, "husky")) {
-  packagesToInstall.push("husky");
-}
-
-if (packagesToInstall.length > 0) {
-  console.log(`Installing dev dependencies: ${packagesToInstall.join(", ")}`);
-  const installArgs = pmConfig.install.args.concat(packagesToInstall);
-  runCommand(pmConfig.install.command, installArgs);
-} else {
-  console.log("Dependencies already present, skipping install.");
-}
-
-ensureCommitlintConfig(cwd, packageJson);
-
-if (!hasGit) {
-  console.log("No .git directory found; skipping Husky setup.");
-  process.exit(0);
-}
-
-if (needsHuskyInit) {
-  console.log("Initializing Husky...");
-  runCommand(pmConfig.husky.command, pmConfig.husky.args);
-} else {
-  console.log("Husky already initialized, skipping install.");
-}
-
-ensureCommitMsgHook(cwd, pmConfig.hookCommand);
 
 function printUsage() {
-  console.log("Usage: cbashik-commitlint --init");
+  console.log("Usage: cbashik-commitlint --init [--ask]");
+  console.log("  --ask  prompt for each option with defaults");
 }
 
 function fileExists(filePath) {
@@ -89,6 +173,15 @@ function readJson(filePath) {
   }
 }
 
+function writeJson(filePath, value) {
+  try {
+    fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  } catch (error) {
+    console.error(`Failed to write ${filePath}: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 function hasDependency(packageJson, name) {
   const sections = [
     packageJson.dependencies,
@@ -103,6 +196,71 @@ function hasDependency(packageJson, name) {
 function addIfMissing(packageJson, list, name) {
   if (!hasDependency(packageJson, name)) {
     list.push(name);
+  }
+}
+
+function createPrompter() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return {
+    question(prompt) {
+      return new Promise((resolve) => {
+        rl.question(prompt, (answer) => resolve(answer));
+      });
+    },
+    close() {
+      rl.close();
+    },
+  };
+}
+
+async function promptYesNo(prompter, label, defaultValue) {
+  const hint = defaultValue ? "Y/n" : "y/N";
+
+  while (true) {
+    const answer = (await prompter.question(`${label} (${hint}): `))
+      .trim()
+      .toLowerCase();
+
+    if (!answer) {
+      return defaultValue;
+    }
+
+    if (answer === "y" || answer === "yes") {
+      return true;
+    }
+
+    if (answer === "n" || answer === "no") {
+      return false;
+    }
+
+    console.log("Please answer yes or no.");
+  }
+}
+
+async function promptPackageManager(prompter, defaultValue) {
+  const options = ["npm", "pnpm", "yarn", "bun"];
+  const label = options.join("/");
+
+  while (true) {
+    const answer = (await prompter.question(
+      `Package manager (${label}) [${defaultValue}]: `
+    ))
+      .trim()
+      .toLowerCase();
+
+    if (!answer) {
+      return defaultValue;
+    }
+
+    if (options.includes(answer)) {
+      return answer;
+    }
+
+    console.log(`Please choose one of: ${options.join(", ")}.`);
   }
 }
 
@@ -161,9 +319,9 @@ function runCommand(command, args) {
   }
 }
 
-function ensureCommitlintConfig(cwd, packageJson) {
+function ensureCommitlintConfig(cwd, packageJsonPath, packageJson) {
   if (packageJson.commitlint) {
-    console.log("commitlint config found in package.json, skipping file write.");
+    console.log("commitlint config found in package.json, skipping update.");
     return;
   }
 
@@ -181,19 +339,15 @@ function ensureCommitlintConfig(cwd, packageJson) {
     fileExists(path.join(cwd, file))
   );
   if (hasConfig) {
-    console.log("commitlint config file already exists, skipping write.");
+    console.log(
+      "commitlint config file already exists, skipping package.json update."
+    );
     return;
   }
 
-  const configPath = path.join(cwd, "commitlint.config.js");
-  const contents = [
-    "module.exports = {",
-    "  extends: [\"@cbashik/commitlint\"],",
-    "};",
-    "",
-  ].join("\n");
-  fs.writeFileSync(configPath, contents, "utf8");
-  console.log("Created commitlint.config.js.");
+  packageJson.commitlint = { extends: ["@cbashik/commitlint"] };
+  writeJson(packageJsonPath, packageJson);
+  console.log("Added commitlint config to package.json.");
 }
 
 function ensureCommitMsgHook(cwd, hookCommand) {

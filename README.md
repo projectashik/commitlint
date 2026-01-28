@@ -18,6 +18,8 @@ bun add -d @cbashik/commitlint @commitlint/cli
 
 ```bash
 npx @cbashik/commitlint --init
+# or (interactive prompts)
+npx @cbashik/commitlint --init --ask
 # or
 pnpm dlx @cbashik/commitlint --init
 # or
@@ -28,20 +30,13 @@ bunx @cbashik/commitlint --init
 
 The init command detects your package manager from lockfiles (bun, pnpm, yarn,
 npm), installs `@cbashik/commitlint` and `@commitlint/cli` (and Husky if needed),
-creates `commitlint.config.js` when missing, initializes Husky, and writes a
-`commit-msg` hook using the matching executor.
+adds commitlint config to your `package.json` when missing, initializes Husky,
+and writes a `commit-msg` hook using the matching executor. Add `--ask` to be
+prompted for each option with the detected/default choice preselected.
 
 ## Usage
 
-Create a `commitlint.config.js` file in your project root:
-
-```javascript
-module.exports = {
-  extends: ['@cbashik/commitlint']
-};
-```
-
-Or extend it in your `package.json`:
+Extend it in your `package.json`:
 
 ```json
 {
@@ -49,6 +44,14 @@ Or extend it in your `package.json`:
     "extends": ["@cbashik/commitlint"]
   }
 }
+```
+
+Or create a `commitlint.config.js` file in your project root:
+
+```javascript
+module.exports = {
+  extends: ['@cbashik/commitlint']
+};
 ```
 
 ## Commit Message Format
