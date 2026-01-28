@@ -59,6 +59,8 @@ npm install -g ./cbashik-commitlint-*.tgz
 There is no test runner or test suite in this repository. The `npm test`
 script only prints a message and exits. If you add tests, update `package.json`
 so a single-test command is supported and document it here.
+If you add tests, prefer Node's built-in `node:test` for minimal dependencies,
+and add a `test:one` or `test:watch` script that accepts a file or pattern.
 
 ## Code style guidelines
 
@@ -112,12 +114,25 @@ so a single-test command is supported and document it here.
 - Update `package.json` `files` field if new publishable files are added.
 - Keep `helpUrl` in `index.js` pointing to the canonical README section.
 
+### Change checklist
+
+- Rule changes: update `index.js`, `README.md`, and `CHANGELOG.md` (Unreleased).
+- Commit type changes: keep `type-enum` and README examples in sync.
+- Parser changes: review `headerPattern` and `helpUrl` formatting examples.
+
 ## Release and publishing notes
 
 - Release scripts exist in `package.json`: `release:patch`, `release:minor`,
   `release:major` (they run `npm version` and `git push --follow-tags`).
 - The publish workflow runs on tags matching `v*` or GitHub releases.
 - Publishing requires `NODE_AUTH_TOKEN` in GitHub Actions.
+
+## Dependency and compatibility notes
+
+- Prefer no new dependencies; if required, update `package.json` and
+  `package-lock.json` together.
+- Keep peer dependency ranges aligned with supported commitlint versions.
+- Avoid Node APIs newer than 16 and avoid ESM-only packages.
 
 ## CI expectations
 
