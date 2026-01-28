@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--init` CLI to install dependencies, scaffold commitlint config, and set up
+  Husky commit-msg hooks.
+
 ## [1.0.2] - 2024-10-09
 
 ### Changed

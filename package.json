@@ -3,6 +3,9 @@
   "version": "1.0.4",
   "description": "Custom commitlint configuration for cbashik projects",
   "main": "index.js",
+  "bin": {
+    "cbashik-commitlint": "bin/cbashik-commitlint.js"
+  },
   "keywords": [
     "commitlint",
     "conventional-commits",
@@ -22,6 +25,7 @@
   },
   "homepage": "https://github.com/projectashik/commitlint#readme",
   "files": [
+    "bin/",
     "index.js",
     "README.md"
   ],

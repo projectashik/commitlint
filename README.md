@@ -10,7 +10,26 @@ npm install --save-dev @cbashik/commitlint @commitlint/cli
 yarn add --dev @cbashik/commitlint @commitlint/cli
 # or
 pnpm add -D @cbashik/commitlint @commitlint/cli
+# or
+bun add -d @cbashik/commitlint @commitlint/cli
 ```
+
+## Quick setup (init command)
+
+```bash
+npx @cbashik/commitlint --init
+# or
+pnpm dlx @cbashik/commitlint --init
+# or
+yarn dlx @cbashik/commitlint --init
+# or
+bunx @cbashik/commitlint --init
+```
+
+The init command detects your package manager from lockfiles (bun, pnpm, yarn,
+npm), installs `@cbashik/commitlint` and `@commitlint/cli` (and Husky if needed),
+creates `commitlint.config.js` when missing, initializes Husky, and writes a
+`commit-msg` hook using the matching executor.
 
 ## Usage
 
