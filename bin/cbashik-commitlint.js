@@ -285,22 +285,22 @@ function getPackageManagerConfig(name) {
   const configs = {
     bun: {
       install: { command: "bun", args: ["add", "-d"] },
-      husky: { command: "bunx", args: ["husky", "install"] },
+      husky: { command: "bunx", args: ["husky"] },
       hookCommand: "bunx commitlint --edit \"$1\"",
     },
     pnpm: {
       install: { command: "pnpm", args: ["add", "-D"] },
-      husky: { command: "pnpm", args: ["exec", "husky", "install"] },
+      husky: { command: "pnpm", args: ["exec", "husky"] },
       hookCommand: "pnpm exec commitlint --edit \"$1\"",
     },
     yarn: {
       install: { command: "yarn", args: ["add", "--dev"] },
-      husky: { command: "yarn", args: ["husky", "install"] },
+      husky: { command: "yarn", args: ["husky"] },
       hookCommand: "yarn commitlint --edit \"$1\"",
     },
     npm: {
       install: { command: "npm", args: ["install", "--save-dev"] },
-      husky: { command: "npx", args: ["husky", "install"] },
+      husky: { command: "npx", args: ["husky"] },
       hookCommand: "npx --no -- commitlint --edit \"$1\"",
     },
   };

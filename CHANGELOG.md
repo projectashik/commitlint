@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `--init` now writes commitlint config into `package.json` instead of creating
   a `commitlint.config.js` file.
+- `--init` uses the recommended `husky` command to avoid deprecated
+  `husky install`.
 
 ## [1.0.2] - 2024-10-09
 
